@@ -12,14 +12,13 @@ from argparse import ArgumentParser
 from itertools import chain, product
 from os.path import exists
 from string import printable
-from subprocess import PIPE, Popen
 from time import time
+from rarcracklib import give_a_try
 
 chars = (
     printable
     + 'ÁáÂâàÀÃãÅåÄäÆæÉéÊêÈèËëÐðÍíÎîÌìÏïÓóÒòÔôØøÕõÖöÚúÛûÙùÜüÇçÑñÝý®©Þþß'
 )
-special_chars = "();<>`|~\"&\'}]"
 
 parser = ArgumentParser(description='Python combination generator to unrar')
 parser.add_argument(
@@ -60,14 +59,6 @@ def generate_combinations(alphabet, length, start=1):
     )
 
 
-def format(string):
-    """Format chars to write them in shell."""
-    formated = map(
-        lambda char: char if char not in special_chars else f'\\{char}', string
-    )
-    return ''.join(formated)
-
-
 if __name__ == '__main__':
     if not exists(args.file):
         raise FileNotFoundError(args.file)
@@ -75,23 +66,16 @@ if __name__ == '__main__':
     if args.stop < args.start:
         raise Exception('Stop number is less than start')
 
+    print(f'Loaded engine: {give_a_try.engine_name}')
+
     start_time = time()
     for combination in generate_combinations(
         args.alphabet, args.stop, args.start
     ):
-        formated_combination = format(combination)
-
         if args.verbose:
             print(f'Trying: {combination}')
 
-        cmd = Popen(
-            f'unrar t -p{formated_combination} {args.file}'.split(),
-            stdout=PIPE,
-            stderr=PIPE,
-        )
-        out, err = cmd.communicate()
-
-        if 'All OK' in out.decode():
-            print(f'Password found: {combination}')
+        if (correct_password := give_a_try(args.file, combination)):
+            print(f'Password found: {correct_password}')
             print(f'Time: {time() - start_time}')
             exit()
