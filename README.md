@@ -16,7 +16,9 @@ optional arguments:
   --file FILE          .rar file [file.rar]
 ```
 
-#### Performance notes
+## Performance notes
+
+#### Implementations
 
 There are multiple implementations. Depends on python module availability,
 corresponding method to be used:
@@ -49,6 +51,27 @@ sys 1m14.105s
 ```
 
 Note: It is on you to install unrardll or unrar modules.
+
+#### RAR versions
+
+Noticed that newer archive format has more stronger encryption which affects on bruteforce time.
+```
+$ unrar l /var/tmp/test.rar 
+
+UNRAR 6.22 freeware      Copyright (c) 1993-2023 Alexander Roshal
+
+Archive: /var/tmp/test.rar
+Details: RAR 5
+_________^^^^^^_______
+```
+
+using the same `--start 3 --stop 3 --alphabet 0987654321ABCDEFGHIJKLMNOPQRSTUVWXYZ` on i7-8565U
+
+|RAR format \ method       | unrardll  | unrar |
+|--------------------------|-----------|-------|
+|RAR 5                     | 14m49s    | 16m3s |
+|RAR 4                     | 10s       | 20s   |
+
 
 #### Example
 

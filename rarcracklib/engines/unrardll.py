@@ -10,6 +10,11 @@ def give_a_try(file_path, password):
         unrardll.extract_member(file_path, lambda x: True, password)
     except unrardll.BadPassword:
         return None
+    except unrardll.unrar.UNRARError as e:
+        if e.args[0] == 'ERAR_BAD_PASSWORD':
+            return None
+
+        raise
 
     return password
 
