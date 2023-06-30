@@ -14,6 +14,9 @@ optional arguments:
   --verbose VERBOSE    Show combintations
   --alphabet ALPHABET  alternative chars to combinations
   --file FILE          .rar file [file.rar]
+  --processes PROCESSES
+                        number of workers
+  --no-mt               do not use multiprocessing
 ```
 
 ## Performance notes
@@ -72,6 +75,19 @@ using the same `--start 3 --stop 3 --alphabet 0987654321ABCDEFGHIJKLMNOPQRSTUVWX
 |RAR 5                     | 14m49s    | 16m3s |
 |RAR 4                     | 10s       | 20s   |
 
+
+#### Multiprocessing 
+
+You still have ability to run with origin algorithm by providing `--no-mt` argument.
+
+By default number of processes equals to number of CPU cores minus 1.  
+You can specify the number by providing an `--processes NN` argument.
+
+Timing measurements with `--start 3 --stop 3 --alphabet 0987654321ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef`
+
+| engine \ no. processes | --no-mt |  1  | 2  | 3  | 4  |
+|------------------------|---------|-----|----|----|----|
+|  unrardll              | 17.0s   |17.3s|8.6s|5.9s|5.2s|
 
 #### Example
 

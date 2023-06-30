@@ -11,8 +11,10 @@ http://rarcrack.sourceforge.net/
 from argparse import ArgumentParser
 from itertools import chain, product
 from os.path import exists
+from os import cpu_count
 from string import printable
 from time import time
+from multiprocessing import Pool
 from rarcracklib import give_a_try
 
 chars = (
@@ -46,6 +48,10 @@ parser.add_argument(
 
 parser.add_argument('--file', help='.rar file [file.rar]', type=str)
 
+parser.add_argument('--processes', help='number of workers', default=cpu_count()-1, type=int)
+
+parser.add_argument('--no-mt', help='do not use multiprocessing', action='store_true')
+
 args = parser.parse_args()
 
 
@@ -59,6 +65,10 @@ def generate_combinations(alphabet, length, start=1):
     )
 
 
+def give_a_try_worker(password):
+    return give_a_try(give_a_try_worker.file, password)
+
+
 if __name__ == '__main__':
     if not exists(args.file):
         raise FileNotFoundError(args.file)
@@ -69,13 +79,31 @@ if __name__ == '__main__':
     print(f'Loaded engine: {give_a_try.engine_name}')
 
     start_time = time()
-    for combination in generate_combinations(
-        args.alphabet, args.stop, args.start
-    ):
-        if args.verbose:
-            print(f'Trying: {combination}')
 
-        if (correct_password := give_a_try(args.file, combination)):
-            print(f'Password found: {correct_password}')
-            print(f'Time: {time() - start_time}')
-            exit()
+    if args.no_mt:
+        for combination in generate_combinations(
+            args.alphabet, args.stop, args.start
+        ):
+            if args.verbose:
+                print(f'Trying: {combination}')
+
+            if (correct_password := give_a_try(args.file, combination)):
+                print(f'Password found: {correct_password}')
+                break
+
+    else:
+        give_a_try_worker.file = args.file
+
+        with Pool(processes=args.processes) as pool:
+            for correct_password in pool.imap_unordered(
+                give_a_try_worker,
+                generate_combinations(args.alphabet, args.stop, args.start),
+                100
+            ):
+                if correct_password:
+                    print(f'Password found: {correct_password}')
+                    break
+
+            pool.terminate()
+
+    print(f'Time: {time() - start_time}')
