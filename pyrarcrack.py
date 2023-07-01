@@ -10,11 +10,16 @@ http://rarcrack.sourceforge.net/
 """
 from argparse import ArgumentParser
 from itertools import chain, product
+from functools import reduce
+from operator import add
 from os.path import exists
-from os import cpu_count
+from os import cpu_count, get_terminal_size
+from sys import stdout
+from time import sleep
 from string import printable
-from time import time
+from datetime import datetime, timedelta
 from multiprocessing import Pool
+from threading import Thread, Event
 from rarcracklib import give_a_try
 
 chars = (
@@ -64,9 +69,42 @@ def generate_combinations(alphabet, length, start=1):
         )
     )
 
+def total_combinations(alphabet, length, start=1):
+    return reduce(add, (pow(len(alphabet), x) for x in range(start, length + 1)))
 
 def give_a_try_worker(password):
     return give_a_try(give_a_try_worker.file, password)
+
+def progress_report():
+    stop = False
+
+    while True:
+        elapsed_time = datetime.now() - progress_report.start_time
+
+        try:
+            speed = progress_report.tested_combinations // elapsed_time.seconds
+        except ZeroDivisionError:
+            speed = 1
+
+        try:
+            estimated_time = timedelta(seconds=((progress_report.total_combinations - progress_report.tested_combinations) // speed))
+        except OverflowError:
+            estimated_time = 'infinite'
+        except ZeroDivisionError:
+            estimated_time = 'Nan'
+
+        stdout.write(
+            '\r{} % tested, {} comb/s, ELAPS {}, ETA {}'.format(
+              round(progress_report.tested_combinations / progress_report.total_combinations * 100, 2),
+              speed,
+              str(elapsed_time).split('.')[0],
+              estimated_time
+            ).ljust(get_terminal_size().columns)
+        )
+
+        if stop: break
+
+        if progress_report.stop_event.wait(timeout=6): stop = True
 
 
 if __name__ == '__main__':
@@ -78,7 +116,13 @@ if __name__ == '__main__':
 
     print(f'Loaded engine: {give_a_try.engine_name}')
 
-    start_time = time()
+    progress_report.start_time = datetime.now()
+    progress_report.total_combinations = total_combinations(args.alphabet, args.stop, args.start)
+    progress_report.tested_combinations = 0
+    progress_report.stop_event = Event()
+
+    report_thread = Thread(target=progress_report)
+    report_thread.start()
 
     if args.no_mt:
         for combination in generate_combinations(
@@ -90,6 +134,8 @@ if __name__ == '__main__':
             if (correct_password := give_a_try(args.file, combination)):
                 print(f'Password found: {correct_password}')
                 break
+
+            progress_report.tested_combinations += 1
 
     else:
         give_a_try_worker.file = args.file
@@ -104,6 +150,8 @@ if __name__ == '__main__':
                     print(f'Password found: {correct_password}')
                     break
 
+                progress_report.tested_combinations += 1
+
             pool.terminate()
 
-    print(f'Time: {time() - start_time}')
+    progress_report.stop_event.set()
