@@ -13,6 +13,8 @@ optional arguments:
   --stop STOP          Number of characters of the final string [3 -> "ßßß"]
   --verbose VERBOSE    Show combintations
   --alphabet ALPHABET  alternative chars to combinations
+  --advanced-alphabet ADVANCED_ALPHABET
+                        a file contains the own alphabet for a password char (per a line)
   --file FILE          .rar file [file.rar]
   --processes PROCESSES
                         number of workers
@@ -89,7 +91,14 @@ Timing measurements with `--start 3 --stop 3 --alphabet 0987654321ABCDEFGHIJKLMN
 |------------------------|---------|-----|----|----|----|
 |  unrardll              | 17.0s   |17.3s|8.6s|5.9s|5.2s|
 
-#### Example
+## Advanced alphabet
+
+If you know precise length of a password and character variants per a char position, you
+can use `--advanced-alphabet` by providing a file contains those variants. Each line of that file
+should contain an alphabet for a particular letter of a password. Where line number represents
+a letter position.
+
+## Example
 
 ```
 $ python pyrarcrack.py --start 10 --stop 10 --file example_path.rar --alphabet 1234567890
