@@ -103,7 +103,7 @@ def progress_report():
         elapsed_time = datetime.now() - progress_report.start_time
 
         try:
-            speed = progress_report.tested_combinations // elapsed_time.seconds
+            speed = progress_report.tested_combinations // elapsed_time.total_seconds()
         except ZeroDivisionError:
             speed = 1
 
